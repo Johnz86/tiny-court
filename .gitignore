@@ -17,6 +17,9 @@ wheels/
 # Repo-local Hugging Face model cache (downloaded weights, not source)
 models/
 
+# Captured agent traces (redacted JSONL; publish via scripts/upload_traces.py)
+traces/
+
 # Dev/verification artifacts
 *.log
 .app_out.txt
