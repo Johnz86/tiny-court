@@ -37,6 +37,11 @@ Map of the Tiny Court docs. Start with the **design spec** for product/UX and th
 ## Build & deploy
 - [deployment.md](deployment.md) — Gradio version, ZeroGPU constraints, and how to
   ship the Space.
+- [deploying-gradio-on-huggingface.md](deploying-gradio-on-huggingface.md) — general,
+  reusable field guide: `hf` CLI commands, token/auth traps, `requirements.txt` rules,
+  the module-level-`demo`/`launch()` shape, custom-component wheel install, Git LFS,
+  ZeroGPU's `@spaces.GPU` startup requirement, log/UTF-8 debugging, and the full
+  **iframe height-runaway** fix (CSS + JS).
 - [multimodal-textbox.md](multimodal-textbox.md) — the custom chat composer:
   behaviour/design **and** the rebuild recipe.
 
