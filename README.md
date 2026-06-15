@@ -23,9 +23,10 @@ tags:
   - sponsor:nvidia
   - sponsor:openbmb
   - sponsor:jetbrains
-  - badge:off-brand
-  - badge:best-agent
-  - badge:bonus-quest-champion
+  - achievement:offbrand
+  - achievement:llama
+  - achievement:sharing
+  - achievement:fieldnotes
 ---
 
 <!-- The block above is Hugging Face Space metadata (must stay at the very top).
