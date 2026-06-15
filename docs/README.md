@@ -51,3 +51,6 @@ Map of the Tiny Court docs. Start with the **design spec** for product/UX and th
 
 ## Event context
 - [hackathon.md](hackathon.md) — the Build Small hackathon brief.
+- [hackathon-winning-roadmap.md](hackathon-winning-roadmap.md) — the badges/steps we
+  deferred to deploy first, prioritised (Field Notes, traces dataset, MiniCPM-V via
+  Modal/ZeroGPU, fine-tune), with the submission-artifact checklist.
