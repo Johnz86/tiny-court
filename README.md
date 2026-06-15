@@ -48,11 +48,17 @@ Modal**, accepting **text, photo, and voice** evidence.
 
 This is a comedy experience, **not** legal advice.
 
+Built for the **Build Small Hackathon** (Gradio × Hugging Face).
+
+* **Live app:** https://huggingface.co/spaces/build-small-hackathon/tiny-court
+* **Demo walkthrough:** [a full trial recorded against the live app](https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/assets/promo-walkthrough.mp4)
+* **Open traces:** https://huggingface.co/datasets/build-small-hackathon/tiny-court-traces
+* **Field notes / blog post:** https://johnz86.github.io/blog/tiny-court-and-the-urge-to-outsource-judgment.html
+* **Narrated overview (video):** [Tiny Court and the urge to outsource judgment](https://youtu.be/sRP8FBWoPXg)
+
 ## Watch a trial
 
-▶️ **[Watch the demo on YouTube](https://youtu.be/sRP8FBWoPXg)** — a narrated walkthrough of Tiny Court.
-
-[![Tiny Court — a full trial walkthrough](assets/promo-walkthrough.webp)](https://youtu.be/sRP8FBWoPXg)
+![Tiny Court — a full trial walkthrough](assets/promo-walkthrough.webp)
 
 *A sped-up loop of one full trial — complaint → evidence → witness → cross-examine
 → twist → verdict → leniency appeal → the shareable **Court Record** — recorded
@@ -104,6 +110,8 @@ verdict meters snapshotted alongside each call) and published to
 A short write-up on building Tiny Court — and why a comedy courtroom is a careful
 frame for *not* outsourcing judgment to a model:
 **[Tiny Court and the urge to outsource judgment](https://johnz86.github.io/blog/tiny-court-and-the-urge-to-outsource-judgment.html)**.
+A narrated overview of the piece is on
+**[YouTube](https://youtu.be/sRP8FBWoPXg)**.
 
 ## Docs
 
