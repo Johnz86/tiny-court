@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "screenshots:full-trial": "node scripts/drive_full_trial.cjs",
+    "screenshots:promo": "node scripts/drive_promo.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

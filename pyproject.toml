@@ -1,0 +1,47 @@
+[project]
+name = "tiny-court"
+version = "0.1.0"
+description = "A comedy-courtroom Gradio app that puts petty everyday crimes on trial."
+readme = "README.md"
+# Pinned below 3.14: the PyTorch CUDA index has no cp314 Windows wheels yet.
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "accelerate>=1.13.0",
+    "bitsandbytes>=0.49.2",
+    "gradio>=6.16.0",
+    "huggingface-hub>=1.18.0",
+    "hf-transfer>=0.1.8",
+    "safetensors>=0.7.0",
+    "sentencepiece>=0.2.1",
+    "torch>=2.12.0",
+    "transformers>=5.10.2",
+    "gradio-multimodalcomposer",
+    "spaces>=0.50.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tinycourt"]
+
+[tool.uv.sources]
+gradio-multimodalcomposer = { path = "custom_components/MultimodalComposer", editable = true }
+# PyPI's Windows torch wheel is CPU-only; the local backend needs CUDA for the
+# 8GB RTX 4060 (4-bit bitsandbytes loads). cu130 supports Ada (sm_89).
+torch = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

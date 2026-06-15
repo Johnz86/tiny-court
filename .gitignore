@@ -1,0 +1,35 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Caches
+.pytest_cache
+.ruff_cache
+.uv-cache
+
+# Repo-local Hugging Face model cache (downloaded weights, not source)
+models/
+
+# Dev/verification artifacts
+*.log
+.app_out.txt
+.app_err.txt
+scripts/_composer_testfiles/
+
+# Generated diagnostic + promo screenshots/video (regenerate via scripts/drive_*.cjs).
+# The folder structure + README are tracked; the captured artifacts are not.
+tests/screenshots/**/*.png
+tests/screenshots/**/*.webm
+tests/screenshots/**/*.mp4
+tests/screenshots/**/*.gif
+
+# Local secret: GitHub fine-grained access token (never commit)
+fgat.txt
+*.pat

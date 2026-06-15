@@ -1,0 +1,18 @@
+# Hugging Face Space dependencies.
+#
+# This Space runs the lightweight courtroom UI on the deterministic **fake**
+# backend (TINYCOURT_BACKEND=fake) — a complete, theatrical trial with no GPU.
+#
+# Deliberately NOT listed:
+#   * gradio / huggingface_hub / spaces — preinstalled and platform-managed;
+#     pinning them breaks the Space SDK (huggingface-spaces skill).
+#   * torch / transformers / accelerate / bitsandbytes — only the optional local
+#     model backend (tinycourt/local_client.py) needs them, and it is imported
+#     lazily, so the fake-backend Space never loads them. Omitting them keeps the
+#     build small and fast. (Running the real model on-Space needs ZeroGPU with a
+#     registered @spaces.GPU handler, or a remote endpoint — see docs/deployment.)
+
+# The custom multimodal composer — prebuilt wheel (its compiled Svelte frontend
+# is bundled), installed over the network from the Space's own resolve URL since
+# HF installs requirements.txt before the app code is copied.
+gradio_multimodalcomposer @ https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/wheels/gradio_multimodalcomposer-0.0.1-py3-none-any.whl

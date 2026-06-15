@@ -1,0 +1,16 @@
+.eggs/
+dist/
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+__tmp/*
+*.pyi
+.mypycache
+.ruff_cache
+node_modules
+build_full.log
+build_wheel.log
+# NOTE: backend/**/templates/ (the compiled Svelte frontend) is intentionally
+# TRACKED — it is required at runtime by source/editable installs, and the
+# deploy target has no Node toolchain to rebuild it. Do not re-add it here.
