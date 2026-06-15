@@ -50,12 +50,14 @@ This is a comedy experience, **not** legal advice.
 
 ## Watch a trial
 
-![Tiny Court — a full trial walkthrough](assets/promo-walkthrough.webp)
+▶️ **[Watch the demo on YouTube](https://youtu.be/sRP8FBWoPXg)** — a narrated walkthrough of Tiny Court.
 
-*A sped-up loop of one full trial: complaint → evidence → witness → cross-examine
-→ twist → verdict → leniency appeal → the shareable **Court Record**.*
-▶️ [**Download the full-quality video (MP4)**](https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/assets/promo-walkthrough.mp4)
-(the loop above is an animated WebP so it plays inline everywhere.)
+[![Tiny Court — a full trial walkthrough](assets/promo-walkthrough.webp)](https://youtu.be/sRP8FBWoPXg)
+
+*A sped-up loop of one full trial — complaint → evidence → witness → cross-examine
+→ twist → verdict → leniency appeal → the shareable **Court Record** — recorded
+against the live app on its real four-model backend.*
+([download the MP4](https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/assets/promo-walkthrough.mp4))
 
 ## How it works
 
