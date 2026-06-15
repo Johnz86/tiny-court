@@ -19,10 +19,11 @@ tags:
   - comedy
   - agent
   - track:backyard
-  - sponsor:modal
-  - sponsor:nvidia
+  - track:wood
   - sponsor:openbmb
-  - sponsor:jetbrains
+  - sponsor:openai
+  - sponsor:nvidia
+  - sponsor:modal
   - achievement:offbrand
   - achievement:llama
   - achievement:sharing
