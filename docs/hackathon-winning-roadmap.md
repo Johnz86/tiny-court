@@ -62,7 +62,7 @@ submission path is closed.
 | Sponsor: OpenBMB | `sponsor:openbmb` | MiniCPM core to experience | Not wired | **Med-High with Modal path** |
 | Tiny Titan | badge/special claim | Every model <= 4B | Possible if using MiniCPM-V ~1.3B or other <=4B | **Only if true** |
 | Field Notes | `achievement:fieldnotes` | Blog/report about build and learning | Docs exist, public post/report needed | **Low-Med** |
-| Sharing is Caring | `achievement:sharing` | Agent traces on HF Hub | Need redacted dataset | **Med** |
+| Sharing is Caring | `achievement:sharing` | Agent traces on HF Hub | ✅ capture implemented (`tinycourt/tracing.py`); run `scripts/upload_traces.py` to publish the dataset | **Med** |
 | Llama Champion | `achievement:llama` | Model served via llama.cpp runtime | No llama.cpp server yet | **High effort** |
 | Well-Tuned | `achievement:welltuned` | Fine-tuned model published on HF | No fine-tune | **Skip unless everything else is done** |
 
@@ -114,14 +114,20 @@ handler, while our local client currently hides GPU work behind an inner helper.
 
 ### C. Add traces only if runtime is stable
 
-For Sharing is Caring:
+For Sharing is Caring — **capture is now implemented** (see
+[`agent-traces.md`](agent-traces.md)):
 
-1. Port the reference `gigscan_via_modal/gigscan/trace_writer.py` idea.
-2. Serialize redacted trial events as JSONL.
-3. Exclude PII and raw uploads; store lengths, hashes, and event types instead.
-4. Publish to an HF Dataset such as `build-small-hackathon/tiny-court-traces` or
-   a user-owned dataset linked from README.
-5. Add `datasets:` frontmatter and the achievement tag only after publication.
+1. ✅ Ported the `gigscan_via_modal/gigscan/trace_writer.py` idea into
+   `tinycourt/tracing.py`, hooked at the `engine.robust_call` seam so every
+   backend (remote/local/fake) and both retry attempts are traced.
+2. ✅ Redacted trial events serialize as JSONL (`trace_format: tinycourt-jsonl-v1`),
+   with a per-call snapshot of the deterministic verdict meters.
+3. ✅ PII and raw uploads excluded — prompt text and inline images reduced to
+   lengths + SHA-256; off by default, opt-in content flags for local debugging.
+4. ⏳ Publish: capture a few trials with `TINYCOURT_TRACES_ENABLED=1`, then run
+   `scripts/upload_traces.py` (target `build-small-hackathon/tiny-court-traces`
+   or a user-owned dataset linked from README).
+5. ⏳ Add `datasets:` frontmatter and the achievement tag only after publication.
 
 This is useful, but it should not outrank the submission package or a working real
 model demo.

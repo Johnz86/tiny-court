@@ -29,14 +29,28 @@ Map of the Tiny Court docs. Start with the **design spec** for product/UX and th
 ## Domain & rationale
 - [../CONTEXT.md](../CONTEXT.md) — canonical domain glossary (use these terms).
 - [motivation.md](motivation.md) — product motivation.
+- [field-notes-the-urge-to-outsource-judgment.md](field-notes-the-urge-to-outsource-judgment.md) — essay on Tiny Court as comic arbitration and a cautionary frame for AI judges.
 - [trial-meters-brainstorm.md](trial-meters-brainstorm.md) — the meters design space
   (Configs A–D); source for ADR-0001/0005.
 - [model-consideration.md](model-consideration.md) — session model catalog (the
   build shipped on Qwen3, not MiniCPM — see ADR-0002).
+- [model-serving-recommendations.md](model-serving-recommendations.md) — current
+  multimodel serving plan: GGUF availability, Modal serving options, target repos,
+  and recommended model roles after MiniCPM-V proved weak at strict formatting.
+- [modal-serving-decision.md](modal-serving-decision.md) — the **decision** built on
+  the recommendations: can we serve multiple models on one endpoint, the chosen
+  judge+vision two-endpoint setup, and exactly what to change in `modal_minicpm`
+  and the client.
 
 ## Build & deploy
 - [deployment.md](deployment.md) — Gradio version, ZeroGPU constraints, and how to
   ship the Space.
+- [hf-space-configuration.md](hf-space-configuration.md) — the Space's required
+  variables & secrets (backend selection, Modal endpoint, tuning, traces) and the
+  exact `hf` commands to set them, restart, and verify.
+- [modal-remote-integration-plan.md](modal-remote-integration-plan.md) — current
+  Modal MiniCPM remote-backend status, environment variables, smoke tests,
+  GigScan lessons, remaining Space rollout plan, and failure modes.
 - [deploying-gradio-on-huggingface.md](deploying-gradio-on-huggingface.md) — general,
   reusable field guide: `hf` CLI commands, token/auth traps, `requirements.txt` rules,
   the module-level-`demo`/`launch()` shape, custom-component wheel install, Git LFS,
@@ -44,6 +58,8 @@ Map of the Tiny Court docs. Start with the **design spec** for product/UX and th
   **iframe height-runaway** fix (CSS + JS).
 - [multimodal-textbox.md](multimodal-textbox.md) — the custom chat composer:
   behaviour/design **and** the rebuild recipe.
+- [agent-traces.md](agent-traces.md) — redacted JSONL agent-trace capture at the
+  generation seam + the publish-to-HF-Dataset workflow (Sharing is Caring).
 
 ## Status
 - [remaining-work.md](remaining-work.md) — what shipped, the one remaining manual
