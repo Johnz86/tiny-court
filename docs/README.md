@@ -29,7 +29,7 @@ Map of the Tiny Court docs. Start with the **design spec** for product/UX and th
 ## Domain & rationale
 - [../CONTEXT.md](../CONTEXT.md) — canonical domain glossary (use these terms).
 - [motivation.md](motivation.md) — product motivation.
-- [field-notes-the-urge-to-outsource-judgment.md](field-notes-the-urge-to-outsource-judgment.md) — essay on Tiny Court as comic arbitration and a cautionary frame for AI judges.
+- [field-notes-the-urge-to-outsource-judgment.md](field-notes-the-urge-to-outsource-judgment.md) — essay on Tiny Court as comic arbitration and a cautionary frame for AI judges. Published as a blog post: [Tiny Court and the urge to outsource judgment](https://johnz86.github.io/blog/tiny-court-and-the-urge-to-outsource-judgment.html).
 - [trial-meters-brainstorm.md](trial-meters-brainstorm.md) — the meters design space
   (Configs A–D); source for ADR-0001/0005.
 - [model-consideration.md](model-consideration.md) — session model catalog (the

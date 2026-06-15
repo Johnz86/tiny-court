@@ -22,6 +22,7 @@ tags:
   - achievement:offbrand
   - achievement:sharing
   - achievement:llama
+  - achievement:fieldnotes
   - sponsor:modal
   - sponsor:nvidia
   - sponsor:openbmb
@@ -95,6 +96,12 @@ Every model call is captured as a redacted JSONL **agent trace** (the determinis
 verdict meters snapshotted alongside each call) and published to
 **[build-small-hackathon/tiny-court-traces](https://huggingface.co/datasets/build-small-hackathon/tiny-court-traces)**
 — no raw images, prompts, or tokens.
+
+## Field notes
+
+A short write-up on building Tiny Court — and why a comedy courtroom is a careful
+frame for *not* outsourcing judgment to a model:
+**[Tiny Court and the urge to outsource judgment](https://johnz86.github.io/blog/tiny-court-and-the-urge-to-outsource-judgment.html)**.
 
 ## Docs
 
