@@ -1204,6 +1204,8 @@ def warm_backend() -> None:
 
         print(f"[tinycourt] model: {selected_model().repo_id}")
         threading.Thread(target=get_client, daemon=True).start()
+    elif BACKEND == "remote":
+        print("[tinycourt] remote endpoint: Modal MiniCPM OpenAI-compatible API")
 
 
 def launch_kwargs() -> dict:

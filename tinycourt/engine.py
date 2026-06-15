@@ -35,6 +35,10 @@ def make_client() -> GenerationClient:
         from .local_client import LocalTransformersClient
 
         return LocalTransformersClient()
+    if BACKEND == "remote":
+        from .remote_client import RemoteModalClient
+
+        return RemoteModalClient()
     return FakeClient()
 
 

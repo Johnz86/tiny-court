@@ -16,3 +16,4 @@
 # is bundled), installed over the network from the Space's own resolve URL since
 # HF installs requirements.txt before the app code is copied.
 gradio_multimodalcomposer @ https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/wheels/gradio_multimodalcomposer-0.0.1-py3-none-any.whl
+requests>=2.32.0

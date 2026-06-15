@@ -87,7 +87,10 @@ def _default_backend() -> str:
     return "local" if spec and _model_cached(spec) else "fake"
 
 
-# Backend seam selector: "fake" (no GPU, canned text) or "local" (transformers).
+# Backend seam selector:
+#   "fake"   - no GPU, canned text
+#   "local"  - transformers in-process
+#   "remote" - OpenAI-compatible Modal/llama-server endpoint
 # Env var wins; otherwise auto-selects "local" when the default model is cached.
 BACKEND = os.environ.get("TINYCOURT_BACKEND") or _default_backend()
 
