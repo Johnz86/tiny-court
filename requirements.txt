@@ -1,7 +1,8 @@
 # Hugging Face Space dependencies.
 #
-# This Space runs the lightweight courtroom UI on the deterministic **fake**
-# backend (TINYCOURT_BACKEND=fake) — a complete, theatrical trial with no GPU.
+# This Space runs the courtroom UI on the deterministic **fake** backend by
+# default, or the **remote** Modal backend when TINYCOURT_MODAL_CHAT_URL is set
+# (judge/vision/formatter/ASR endpoints) — no GPU runs on-Space either way.
 #
 # Deliberately NOT listed:
 #   * gradio / huggingface_hub / spaces — preinstalled and platform-managed;
@@ -17,3 +18,7 @@
 # HF installs requirements.txt before the app code is copied.
 gradio_multimodalcomposer @ https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/wheels/gradio_multimodalcomposer-0.0.1-py3-none-any.whl
 requests>=2.32.0
+# Pillow resizes/compresses uploaded image evidence before it is sent to the
+# remote vision model (tinycourt/engine._compressed_image_data_url); without it
+# the app falls back to raw bytes.
+pillow>=10.0.0

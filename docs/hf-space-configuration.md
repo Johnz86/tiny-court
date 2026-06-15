@@ -18,6 +18,41 @@ Two kinds of config:
 
 ---
 
+## 0. The Space is a clean subset, not the git repo
+
+The dev git repo is a monorepo (app + `modal_minicpm/` server + docs + tests +
+scripts). The **Space carries only the runtime tree** — the Gradio app and what it
+needs to start — mirroring a lean Space like `gigscan_via_modal/`:
+
+```text
+main.py              # Space entry (app_file)
+tinycourt/           # the app package (code + static/)
+wheels/*.whl         # the MultimodalComposer wheel (resolve URL in requirements)
+requirements.txt     # lean Space deps (no torch / modal / test tooling)
+README.md            # HF Space card + frontmatter
+.gitattributes       # LFS patterns
+```
+
+Everything else (`docs/`, `tests/`, `modal_minicpm/`, `scripts/`, `pyproject.toml`,
+the cloned reference app) **never goes to the Space**. Deploy with the helper —
+it uploads exactly that tree and removes any leftover dev files from earlier pushes:
+
+```powershell
+uv run python scripts/deploy_space.py            # dry run: print the clean tree
+uv run python scripts/deploy_space.py --push      # upload + sync (needs a write HF_TOKEN)
+```
+
+**Run locally** (uses `pyproject.toml`, not `requirements.txt`):
+
+```powershell
+uv run python main.py                             # fake backend by default
+$env:TINYCOURT_BACKEND='remote'; uv run python main.py   # against the Modal endpoints
+```
+
+After a code push, still apply variables/secrets (below) and restart.
+
+---
+
 ## 1. What to set, by goal
 
 ### A. Run the deployed app on the real models (Modal, multi-endpoint)
