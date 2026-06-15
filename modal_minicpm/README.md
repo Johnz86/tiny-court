@@ -87,7 +87,7 @@ Modal will:
 - create or reuse the `tinycourt-minicpm-models` volume;
 - download `MiniCPM-V-4_6-Q4_K_M.gguf` and `mmproj-model-f16.gguf` into that
   volume on first cold start;
-- expose the OpenAI-compatible ASGI endpoint.
+- expose the OpenAI-compatible ASGI endpoint behind Modal proxy auth.
 
 The image installs the exact wheel URL deliberately. It must not set
 `CMAKE_ARGS` or `FORCE_CMAKE`; those force a local source build and caused the
@@ -103,22 +103,51 @@ TINYCOURT_MODAL_CHAT_URL=https://jan-jakubcik--tinycourt-minicpm-openai-serve.mo
 TINYCOURT_MODAL_MODEL=MiniCPM-V-4.6
 ```
 
-Then rebuild/restart the Space.
+Set these Hugging Face Space secrets from the Modal proxy auth token:
 
-## Smoke Test
-
-```powershell
-uv run python modal_minicpm/smoke_test.py https://jan-jakubcik--tinycourt-minicpm-openai-serve.modal.run/v1/chat/completions
+```text
+TINYCOURT_MODAL_KEY=<Modal proxy token id>
+TINYCOURT_MODAL_SECRET=<Modal proxy token secret>
 ```
 
-If the response contains a `CHARGE:` field, the Tiny Court prompt/parse path has
-the minimum shape it needs.
+Then rebuild/restart the Space.
+
+## Endpoint smoke test
+
+The live endpoint smoke tests are opt-in and use `.env` loading. They are in the
+`modal_live` pytest group, which is excluded by default because the Modal app may
+not be deployed.
+
+Before proxy auth is deployed, run the baseline public-endpoint check:
+
+```powershell
+uv run --env-file .env pytest -m modal_live tests/test_modal_endpoint.py
+```
+
+Required `.env` values for the baseline:
+
+```text
+TINYCOURT_RUN_MODAL_INTEGRATION=1
+TINYCOURT_MODAL_CHAT_URL=https://jan-jakubcik--tinycourt-minicpm-openai-serve.modal.run/v1/chat/completions
+TINYCOURT_MODAL_MODEL=MiniCPM-V-4.6
+```
+
+After deploying `requires_proxy_auth=True`, add:
+
+```text
+TINYCOURT_EXPECT_MODAL_PROXY_AUTH=1
+TINYCOURT_MODAL_KEY=<Modal proxy token id>
+TINYCOURT_MODAL_SECRET=<Modal proxy token secret>
+```
+
+The live test verifies that missing proxy headers are rejected, valid proxy
+headers are accepted, and the Tiny Court prompt returns a `CHARGE:` field.
 
 Verified deployed endpoint:
 
 ```text
 URL: https://jan-jakubcik--tinycourt-minicpm-openai-serve.modal.run/v1/chat/completions
-Smoke test: HTTP 200
+Endpoint smoke test: HTTP 200
 Model: MiniCPM-V-4.6
 Expected field returned: CHARGE
 ```

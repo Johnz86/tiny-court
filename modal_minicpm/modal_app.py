@@ -118,7 +118,7 @@ def _model_path(filename: str) -> str:
     scaledown_window=10 * MINUTES,
     max_containers=1,
 )
-@modal.asgi_app()
+@modal.asgi_app(requires_proxy_auth=True)
 def serve():
     from llama_cpp.server.app import create_app
     from llama_cpp.server.settings import ModelSettings, ServerSettings

@@ -22,7 +22,7 @@ window. The current source of truth is the Build Small field guide:
 | Promo video asset | ✅ `assets/promo-walkthrough.{webp,mp4}` exists |
 | Modal local setup | ✅ `uv pip install modal` + `uv run modal setup` completed |
 | Modal token | ✅ written to user profile `C:\Users\jan.jakubcik\.modal.toml` |
-| Modal app/runtime | ✅ deployed as `tinycourt-minicpm-openai`; smoke-tested `/v1/chat/completions` |
+| Modal app/runtime | ✅ deployed as `tinycourt-minicpm-openai`; `/v1/chat/completions` covered by `modal_live` endpoint test |
 | README submission links | ❌ needs final demo/social links |
 
 **Backyard framing:** Tiny Court is not just a toy court. It is a lightweight,

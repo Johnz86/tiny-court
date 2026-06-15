@@ -33,3 +33,4 @@ tests/screenshots/**/*.gif
 # Local secret: GitHub fine-grained access token (never commit)
 fgat.txt
 *.pat
+.env

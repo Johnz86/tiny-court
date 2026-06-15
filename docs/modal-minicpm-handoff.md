@@ -12,7 +12,11 @@ finish the Hugging Face Space integration.
   `https://jan-jakubcik--tinycourt-minicpm-openai-serve.modal.run/`
 - Chat completions endpoint:
   `https://jan-jakubcik--tinycourt-minicpm-openai-serve.modal.run/v1/chat/completions`
-- Smoke test passed with HTTP 200 and returned a `CHARGE:` field.
+- Endpoint access should be protected with Modal proxy auth
+  (`@modal.asgi_app(requires_proxy_auth=True)`), using `Modal-Key` and
+  `Modal-Secret` headers from `TINYCOURT_MODAL_KEY` /
+  `TINYCOURT_MODAL_SECRET`.
+- Endpoint smoke test passed with HTTP 200 and returned a `CHARGE:` field.
 - The Hugging Face Space has **not** yet been switched to this backend.
 
 ## Modal implementation
@@ -21,7 +25,8 @@ Code lives in `modal_minicpm/`.
 
 - `modal_minicpm/modal_app.py` defines the Modal app.
 - `modal_minicpm/models.py` defines the MiniCPM model registry.
-- `modal_minicpm/smoke_test.py` verifies `/v1/chat/completions`.
+- `tests/test_modal_endpoint.py` verifies `/v1/chat/completions` when explicitly
+  selected with `-m modal_live`.
 - `modal_minicpm/README.md` records verified model links, runtime tuple, and deploy
   commands.
 
@@ -62,6 +67,13 @@ TINYCOURT_MODAL_CHAT_URL=https://jan-jakubcik--tinycourt-minicpm-openai-serve.mo
 TINYCOURT_MODAL_MODEL=MiniCPM-V-4.6
 ```
 
+Add these as Space secrets, not public variables:
+
+```text
+TINYCOURT_MODAL_KEY=<Modal proxy token id>
+TINYCOURT_MODAL_SECRET=<Modal proxy token secret>
+```
+
 `requirements.txt` now includes `requests>=2.32.0`, which the remote backend needs.
 
 ## Verification commands
@@ -72,20 +84,21 @@ Use uv for local commands:
 $env:UV_CACHE_DIR='.uv-cache'
 $env:PYTHONIOENCODING='utf-8'
 uv run python -m py_compile modal_minicpm\modal_app.py modal_minicpm\models.py tinycourt\remote_client.py
-uv run python modal_minicpm\smoke_test.py https://jan-jakubcik--tinycourt-minicpm-openai-serve.modal.run/v1/chat/completions --model MiniCPM-V-4.6
+uv run --env-file .env pytest -m modal_live tests\test_modal_endpoint.py
 uv run modal app list --json
 ```
 
-Expected smoke-test result: HTTP 200 and a response containing `CHARGE:`.
+Expected endpoint smoke-test result: missing proxy auth is rejected, valid proxy
+auth returns HTTP 200, and the response contains `CHARGE:`.
 
 ## Next steps
 
 1. Apply the Space variables above.
 2. Rebuild/restart the Hugging Face Space.
 3. Run a real Tiny Court trial against the deployed Space.
-4. Watch for parser fallbacks in generated trial steps. The smoke test confirms the
-   endpoint shape, but the full app still needs model outputs to obey Tiny Court's
-   delimited fields consistently.
+4. Watch for parser fallbacks in generated trial steps. The endpoint smoke test
+   confirms the endpoint shape, but the full app still needs model outputs to
+   obey Tiny Court's delimited fields consistently.
 5. If stable, update the main README tags/claims for Modal, OpenBMB, and Llama
    Champion only after the Space is demonstrably using the remote backend.
 

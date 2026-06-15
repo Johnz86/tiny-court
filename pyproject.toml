@@ -25,8 +25,13 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
+addopts = ["-m", "not modal_live"]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "integration: tests that call deployed external services",
+    "modal_live: live tests for a deployed Modal endpoint; excluded by default",
+]
 
 [build-system]
 requires = ["hatchling"]
