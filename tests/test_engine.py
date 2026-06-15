@@ -20,6 +20,7 @@ from tinycourt.engine import (
     play_arguments,
     raise_objection,
     react,
+    robust_call,
     submit_evidence,
     submit_plea,
 )
@@ -256,3 +257,56 @@ def test_objection_moves_suspicion():
     assert state.objection_used
     # Suspicion changed measurably in one direction or the other.
     assert state.meters.suspicion != before
+
+
+# --- Formatter repair pass (docs/modal-serving-decision.md) -----------------
+
+
+class _StubClient(GenerationClient):
+    """Generates a fixed draft and optionally 'repairs' it into the contract."""
+
+    name = "stub"
+
+    def __init__(self, draft: str, repair_text: str | None = None) -> None:
+        self.draft = draft
+        self.repair_text = repair_text
+        self.repair_calls = 0
+
+    def generate(self, messages, *, tag, max_new_tokens=320, temperature=0.9):
+        return GenerationResult(text=self.draft, tag=tag)
+
+    def repair(self, raw_text, *, required_keys, tag):
+        self.repair_calls += 1
+        if self.repair_text is None:
+            return None
+        return GenerationResult(text=self.repair_text, tag=tag)
+
+
+def test_robust_call_uses_formatter_repair_on_bad_parse():
+    state = TrialState(complaint="x")
+    client = _StubClient(draft="rambling with no fields at all",
+                         repair_text="---\nCHARGE: Unauthorized Oat Milk Consumption\n")
+    parsed = robust_call(client, [Message("user", "x")], CallTag.CASE_OPEN,
+                         required_keys=("CHARGE",), state=state)
+    assert client.repair_calls == 1
+    assert parsed.get("CHARGE") == "Unauthorized Oat Milk Consumption"
+    assert state.fallbacks == []  # repaired, so no canned fallback
+
+
+def test_robust_call_falls_back_when_no_formatter():
+    state = TrialState(complaint="x")
+    client = _StubClient(draft="rambling with no fields", repair_text=None)
+    parsed = robust_call(client, [Message("user", "x")], CallTag.CASE_OPEN,
+                         required_keys=("CHARGE",), state=state)
+    assert client.repair_calls == 1  # repair was attempted...
+    assert not parsed.get("CHARGE")  # ...but returned None
+    assert state.fallbacks == ["case_open"]
+
+
+def test_robust_call_skips_repair_when_parse_succeeds():
+    state = TrialState(complaint="x")
+    client = _StubClient(draft="prose\n---\nCHARGE: Snack Theft\n", repair_text="should not be used")
+    parsed = robust_call(client, [Message("user", "x")], CallTag.CASE_OPEN,
+                         required_keys=("CHARGE",), state=state)
+    assert client.repair_calls == 0
+    assert parsed.get("CHARGE") == "Snack Theft"

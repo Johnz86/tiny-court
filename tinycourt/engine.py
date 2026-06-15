@@ -80,19 +80,58 @@ def robust_call(
     An unusable final result is recorded in ``state.fallbacks`` so the
     verification flow can detect canned output.
     """
+    from .tracing import get_trace_session
+
+    session = get_trace_session()
     best = Parsed()
+    last_text: str | None = None
     for attempt in range(2):
         try:
             result = client.generate(
                 messages, tag=tag, max_new_tokens=max_new_tokens, temperature=temperature
             )
-        except Exception:
+        except Exception as exc:
+            session.record_call(
+                tag=tag, state=state, attempt=attempt, messages=messages,
+                max_new_tokens=max_new_tokens, temperature=temperature,
+                result=None, parsed_ok=False, error=exc,
+            )
             break
+        last_text = result.text
         parsed = parse_delimited(result.text)
         has_required = all(parsed.get(k) for k in required_keys)
-        if parsed.ok and has_required:
+        ok = parsed.ok and has_required
+        session.record_call(
+            tag=tag, state=state, attempt=attempt, messages=messages,
+            max_new_tokens=max_new_tokens, temperature=temperature,
+            result=result, parsed_ok=ok, error=None,
+        )
+        if ok:
             return parsed
         best = parsed  # keep the latest attempt for partial recovery
+
+    # Schema-repair pass (docs/modal-serving-decision.md): a backend with a
+    # formatter model coerces the last malformed draft into the delimited
+    # contract. No-op for backends without one (returns None) — a weak judge that
+    # drifts structurally is salvaged before we resort to a canned card.
+    if last_text is not None:
+        try:
+            repaired = client.repair(last_text, required_keys=required_keys, tag=tag)
+        except Exception:
+            repaired = None
+        if repaired is not None:
+            rparsed = parse_delimited(repaired.text)
+            ok = rparsed.ok and all(rparsed.get(k) for k in required_keys)
+            session.record_call(
+                tag=tag, state=state, attempt=2, messages=[Message("user", last_text)],
+                max_new_tokens=max_new_tokens, temperature=temperature,
+                result=repaired, parsed_ok=ok, error=None,
+            )
+            if ok:
+                return rparsed
+            if not best.ok and rparsed.ok:
+                best = rparsed
+
     state.fallbacks.append(tag.value)
     return best
 
@@ -238,6 +277,9 @@ def submit_evidence(
     *,
     image_paths: Sequence[str] = (),
 ) -> TrialState:
+    # Media perception happens at the app boundary (app._fold_voice transcribes
+    # audio into the text; images ride the prompt as image_url for the vision→
+    # judge path). The engine reasons over text + images only.
     parsed = robust_call(
         client,
         _with_image_content(prompts.evidence(state_summary(state), raw_evidence), image_paths),

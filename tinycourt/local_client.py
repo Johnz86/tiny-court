@@ -182,5 +182,5 @@ class LocalTransformersClient(GenerationClient):
             tag=tag,
             tokens=int(new_tokens.shape[-1]),
             seconds=elapsed,
-            meta={"model": self.spec.repo_id, "tok_s": round(int(new_tokens.shape[-1]) / elapsed, 1) if elapsed else 0.0},
+            meta={"backend": self.name, "model": self.spec.repo_id, "tok_s": round(int(new_tokens.shape[-1]) / elapsed, 1) if elapsed else 0.0},
         )

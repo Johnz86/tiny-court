@@ -278,6 +278,31 @@ def _image_paths(records: list[dict]) -> list[str]:
     return [str(r.get("path") or "") for r in records if r.get("kind") == "image"]
 
 
+def _audio_paths(records: list[dict]) -> list[str]:
+    return [str(r.get("path") or "") for r in records if r.get("kind") == "audio"]
+
+
+def _fold_voice(client, text: str, records: list[dict]) -> str:
+    """Transcribe audio attachments and fold them into the user's text so a voice
+    note works in EVERY phase (intake, evidence, cross, twist, plea), not just
+    evidence. The ASR endpoint is the third input modality; like vision it is
+    perceived into text before the judge sees it. No-op (returns text unchanged)
+    when there's no audio, no ASR endpoint configured, or transcription fails —
+    so the fake/local backends and an unconfigured Space are unaffected."""
+    parts: list[str] = []
+    for path in _audio_paths(records):
+        try:
+            transcript = client.transcribe(path)
+        except Exception:
+            transcript = None
+        if transcript:
+            parts.append(transcript.strip())
+    if not parts:
+        return text
+    note = "[Voice note] " + " ".join(parts)
+    return f"{text}\n{note}".strip() if text else note
+
+
 def _evidence_text(text: str, records: list[dict]) -> str:
     labels = [str(r.get("label") or "uploaded file") for r in records]
     if text and labels:
@@ -672,7 +697,12 @@ def do_send(wiz, mm):
     if wiz.wiz_phase != "trial":
         return render(wiz, reset_composer=False)
     f = wiz.focus
-    if not text and not (f == "evidence" and file_records):
+    client = get_client()
+    # Perceive audio attachments into text up front, so a voice-only message is a
+    # valid send in any phase and its words pass through the same safety gate and
+    # court reaction as typed text (docs/modal-serving-decision.md).
+    text = _fold_voice(client, text, file_records)
+    if not text and not file_records:
         return render(wiz, reset_composer=False)
     evidence_text = _evidence_text(text, file_records)
 
@@ -682,7 +712,6 @@ def do_send(wiz, mm):
     # misses, BEFORE the comedy court reacts to it. Later scenes (evidence/witness/
     # twist/appeal) keep the fast offline floor. A blocked message gets the gentle
     # redirect and never enters the record.
-    client = get_client()
     decision = screen(text, client) if f == "case" else screen(text)
     if decision.outcome is Outcome.TOO_SERIOUS:
         wiz.events.append({"who": "Court Clerk", "text": decision.message, "scene": _scene_now(wiz)})
@@ -711,6 +740,8 @@ def do_send(wiz, mm):
         _build_docket_if_needed(wiz, client)
         wiz.events.append({"who": _role_label(wiz), "text": evidence_text, "scene": "evidence"})
         since = len(wiz.trial.transcript)
+        # Audio is already folded into evidence_text at the boundary (_fold_voice);
+        # pass images for the vision→judge exhibit path.
         submit_evidence(wiz.trial, client, evidence_text, image_paths=_image_paths(file_records))
         _drain(wiz, "evidence", since)
     elif f == "witness":
@@ -761,6 +792,9 @@ def do_action_by_id(wiz, aid, mm=""):
     files = _mm_files(mm) if isinstance(mm, dict) else []
     file_records = _ingest_files(wiz, files)
     client = get_client()
+    # Same boundary perception as do_send: a voice note attached to an action
+    # (e.g. a pending line before "Deliver the Verdict") is heard as text.
+    text = _fold_voice(client, text, file_records)
 
     # --- Plea draft chips: append a draft to the composer, do not re-view. ---
     if aid in PLEA_DRAFTS:
@@ -856,11 +890,9 @@ def do_action_by_id(wiz, aid, mm=""):
             if wiz.focus == "witness":
                 cross_examine(wiz.trial, client, text)
             else:
+                # Audio already folded into the text at the boundary (_fold_voice).
                 submit_evidence(
-                    wiz.trial,
-                    client,
-                    pending_text,
-                    image_paths=_image_paths(file_records),
+                    wiz.trial, client, pending_text, image_paths=_image_paths(file_records)
                 )
             _drain(wiz, scene, since)
         _close_with_deltas(wiz, client)
@@ -1230,6 +1262,11 @@ def warm_backend() -> None:
     Safe to call at import time (the entry point does, so the warm-up overlaps the
     Space boot)."""
     print(f"[tinycourt] backend: {BACKEND}")
+    from .tracing import get_trace_session
+
+    session = get_trace_session()
+    if session.enabled:
+        print(f"[tinycourt] agent traces: on -> {session.path}")
     if BACKEND == "local":
         from .config import selected_model
 

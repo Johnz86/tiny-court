@@ -383,3 +383,49 @@ def test_exhausted_patience_declines_further_chatter():
     assert last["who"] == "Judge"
     assert "enough" in last["text"].lower() or "ruling" in last["text"].lower()
     assert "ANOTHER thing" not in (wiz.trial.complaint or "")
+
+
+# --- ASR boundary perception (_fold_voice) — audio works in every phase ------
+
+
+def _audio_records(path):
+    return [{"kind": "audio", "label": "voice", "path": str(path)}]
+
+
+def test_fold_voice_transcribes_audio_into_text(tmp_path):
+    audio = tmp_path / "note.wav"
+    audio.write_bytes(b"fake-audio")
+
+    class _Voice:
+        def transcribe(self, p):
+            return "objection your honour the milk was mine"
+
+    out = app._fold_voice(_Voice(), "here is my point", _audio_records(audio))
+    assert "here is my point" in out
+    assert "objection your honour the milk was mine" in out
+    assert out.startswith("here is my point")
+
+
+def test_fold_voice_is_noop_without_audio_or_asr(tmp_path):
+    class _NoAsr:
+        def transcribe(self, p):
+            return None  # base-client behaviour: no ASR endpoint
+
+    audio = tmp_path / "note.wav"
+    audio.write_bytes(b"x")
+    # No audio attachment -> unchanged regardless of client.
+    assert app._fold_voice(_NoAsr(), "typed", []) == "typed"
+    # Audio present but backend can't transcribe -> unchanged.
+    assert app._fold_voice(_NoAsr(), "typed", _audio_records(audio)) == "typed"
+
+
+def test_fold_voice_supports_voice_only_message(tmp_path):
+    audio = tmp_path / "note.wav"
+    audio.write_bytes(b"x")
+
+    class _Voice:
+        def transcribe(self, p):
+            return "the cat did it"
+
+    out = app._fold_voice(_Voice(), "", _audio_records(audio))
+    assert out == "[Voice note] the cat did it"

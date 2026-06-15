@@ -12,6 +12,7 @@ from __future__ import annotations
 import enum
 import random
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -81,6 +82,29 @@ class GenerationClient(ABC):
         temperature: float = 0.9,
     ) -> GenerationResult:
         ...
+
+    def repair(
+        self,
+        raw_text: str,
+        *,
+        required_keys: Sequence[str],
+        tag: CallTag,
+    ) -> GenerationResult | None:
+        """Optionally coerce a malformed draft into the delimited ``KEY: value``
+        contract using a dedicated formatter model. Returns ``None`` when the
+        backend has no formatter (the default), so the caller falls back to a
+        deterministic card (docs/adr/0003, docs/modal-serving-decision.md)."""
+        return None
+
+    def transcribe(self, audio_path: str) -> str | None:
+        """Optionally transcribe an uploaded audio file to text via an ASR model.
+
+        This is the third evidence modality (alongside text and image): audio is
+        perceived as a transcript that then flows through the normal text path —
+        the judge never handles raw audio. Returns ``None`` when the backend has
+        no ASR endpoint (the default), so the caller keeps the attachment
+        label-only (docs/modal-serving-decision.md)."""
+        return None
 
 
 # --- FakeClient ------------------------------------------------------------
@@ -299,4 +323,7 @@ class FakeClient(GenerationClient):
     ) -> GenerationResult:
         choices = _FAKE_RESPONSES.get(tag, ["...\n---\n"])
         text = self._rng.choice(choices)
-        return GenerationResult(text=text, tag=tag, tokens=len(text.split()), seconds=0.0)
+        return GenerationResult(
+            text=text, tag=tag, tokens=len(text.split()), seconds=0.0,
+            meta={"backend": self.name, "model": self.name},
+        )
