@@ -51,18 +51,20 @@ This is a comedy experience, **not** legal advice.
 Built for the **Build Small Hackathon** (Gradio × Hugging Face).
 
 * **Live app:** https://huggingface.co/spaces/build-small-hackathon/tiny-court
-* **Demo walkthrough:** [a full trial recorded against the live app](https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/assets/promo-walkthrough.mp4)
+* **Video demo:** [a narrated walkthrough of a full case](https://youtu.be/b5l3SRioTkE)
 * **Open traces:** https://huggingface.co/datasets/build-small-hackathon/tiny-court-traces
 * **Field notes / blog post:** https://johnz86.github.io/blog/tiny-court-and-the-urge-to-outsource-judgment.html
 * **Narrated overview (video):** [Tiny Court and the urge to outsource judgment](https://youtu.be/sRP8FBWoPXg)
 
 ## Watch a trial
 
-![Tiny Court — a full trial walkthrough](assets/promo-walkthrough.webp)
+▶️ **[Watch the narrated demo on YouTube](https://youtu.be/b5l3SRioTkE)** — a full case, start to finish.
 
-*A sped-up loop of one full trial — complaint → evidence → witness → cross-examine
-→ twist → verdict → leniency appeal → the shareable **Court Record** — recorded
-against the live app on its real four-model backend.*
+[![Tiny Court — a full trial walkthrough](assets/promo-walkthrough.webp)](https://youtu.be/b5l3SRioTkE)
+
+*The loop above is a sped-up run of one full trial — complaint → evidence → witness
+→ cross-examine → twist → verdict → leniency appeal → the shareable **Court
+Record** — recorded against the live app on its real four-model backend.*
 ([download the MP4](https://huggingface.co/spaces/build-small-hackathon/tiny-court/resolve/main/assets/promo-walkthrough.mp4))
 
 ## How it works
