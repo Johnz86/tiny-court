@@ -4,8 +4,14 @@ Proves the loop runs and that the Object! interaction measurably moves the
 verdict (design-spec §6, §8.5)."""
 
 import random
+from base64 import b64decode
+from io import BytesIO
 
+import pytest
+
+from tinycourt.generation import CallTag, GenerationClient, GenerationResult, Message
 from tinycourt.engine import (
+    _image_data_url,
     add_twist,
     call_witness,
     cross_examine,
@@ -72,6 +78,66 @@ def test_evidence_raises_evidence_weight():
     before = state.meters.evidence_weight
     submit_evidence(state, client, "The empty cup was in their trash, lid licked clean.")
     assert state.meters.evidence_weight > before, "an admitted exhibit must add proof"
+
+
+class RecordingClient(GenerationClient):
+    name = "recording"
+
+    def __init__(self):
+        self.messages: list[Message] = []
+
+    def generate(
+        self,
+        messages: list[Message],
+        *,
+        tag: CallTag,
+        max_new_tokens: int = 320,
+        temperature: float = 0.9,
+    ) -> GenerationResult:
+        self.messages = messages
+        return GenerationResult(
+            text=(
+                "---\n"
+                "EXHIBIT: The Uploaded Photo\n"
+                "DESCRIPTION: The court inspects the uploaded image.\n"
+                "RELEVANCE: Highly suspicious\n"
+                "RULING: admitted\n"
+                "EVIDENCE_DELTA: +20\n"
+                "SUSPICION_DELTA: +8\n"
+            ),
+            tag=tag,
+        )
+
+
+def test_evidence_can_attach_uploaded_image_content(tmp_path):
+    image = tmp_path / "evidence.png"
+    image.write_bytes(b"fake-png")
+    state = TrialState(complaint="My roommate used the last clean mug.")
+    client = RecordingClient()
+
+    submit_evidence(state, client, "Photo evidence", image_paths=[str(image)])
+
+    user_message = client.messages[-1]
+    assert isinstance(user_message.content, list)
+    assert user_message.content[0]["type"] == "image_url"
+    assert user_message.content[0]["image_url"]["url"].startswith("data:image/png;base64,")
+    assert user_message.content[1]["type"] == "text"
+
+
+def test_image_data_url_resizes_valid_images(tmp_path, monkeypatch):
+    pil_image = pytest.importorskip("PIL.Image")
+    monkeypatch.setenv("TINYCOURT_IMAGE_MAX_SIZE", "64")
+
+    image_path = tmp_path / "large.png"
+    pil_image.new("RGBA", (512, 128), (200, 10, 20, 255)).save(image_path)
+
+    data_url = _image_data_url(str(image_path))
+    prefix, payload = data_url.split(",", 1)
+    decoded = b64decode(payload)
+    resized = pil_image.open(BytesIO(decoded))
+
+    assert prefix == "data:image/jpeg;base64"
+    assert max(resized.size) <= 64
 
 
 def test_objection_moves_evidence_weight_with_its_ruling():

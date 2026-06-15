@@ -257,16 +257,36 @@ def _kind_from_path(path: str) -> str:
     return "file"
 
 
-def _ingest_files(wiz: WizardState, files: list) -> None:
+def _ingest_files(wiz: WizardState, files: list) -> list[dict]:
     """Append uploaded files to the wizard attachment model."""
     if not files:
-        return
+        return []
     _ensure_session(wiz)
+    records = []
     for path in files:
-        kind = _kind_from_path(str(path))
-        label = os.path.basename(str(path))
-        wiz.attachments.append({"kind": kind, "label": label})
+        file_path = str(path)
+        kind = _kind_from_path(file_path)
+        label = os.path.basename(file_path)
+        record = {"kind": kind, "label": label, "path": file_path}
+        wiz.attachments.append(record)
+        records.append(record)
         wiz.events.append({"who": "You", "text": f"added {label}", "scene": _scene_now(wiz)})
+    return records
+
+
+def _image_paths(records: list[dict]) -> list[str]:
+    return [str(r.get("path") or "") for r in records if r.get("kind") == "image"]
+
+
+def _evidence_text(text: str, records: list[dict]) -> str:
+    labels = [str(r.get("label") or "uploaded file") for r in records]
+    if text and labels:
+        return f"{text}\nUploaded attachment(s): {', '.join(labels)}"
+    if text:
+        return text
+    if labels:
+        return f"Uploaded attachment(s): {', '.join(labels)}"
+    return ""
 
 
 # --- Action model -----------------------------------------------------------
@@ -648,10 +668,13 @@ def do_send(wiz, mm):
     wiz = _w(wiz)
     files = _mm_files(mm)
     text = _mm_text(mm)
-    _ingest_files(wiz, files)
-    if wiz.wiz_phase != "trial" or not text:
+    file_records = _ingest_files(wiz, files)
+    if wiz.wiz_phase != "trial":
         return render(wiz, reset_composer=False)
     f = wiz.focus
+    if not text and not (f == "evidence" and file_records):
+        return render(wiz, reset_composer=False)
+    evidence_text = _evidence_text(text, file_records)
 
     # Safety gate on every chat message (design-spec §13–14, docs/adr/0004). The
     # `case` focus IS intake, so it gets the FULL gate including the model
@@ -686,9 +709,9 @@ def do_send(wiz, mm):
         # Build first so any opening exchange leads the transcript, then post the
         # user's detail and the clerk's exhibit ruling under the Evidence scene.
         _build_docket_if_needed(wiz, client)
-        wiz.events.append({"who": _role_label(wiz), "text": text, "scene": "evidence"})
+        wiz.events.append({"who": _role_label(wiz), "text": evidence_text, "scene": "evidence"})
         since = len(wiz.trial.transcript)
-        submit_evidence(wiz.trial, client, text)
+        submit_evidence(wiz.trial, client, evidence_text, image_paths=_image_paths(file_records))
         _drain(wiz, "evidence", since)
     elif f == "witness":
         # A composer send while a witness stands is the user's own cross-examination
@@ -735,6 +758,8 @@ def do_action_by_id(wiz, aid, mm=""):
     wiz = _w(wiz)
     # Accept either a plain string or a raw MultimodalComposer dict.
     text = _mm_text(mm) if isinstance(mm, dict) else (mm or "").strip()
+    files = _mm_files(mm) if isinstance(mm, dict) else []
+    file_records = _ingest_files(wiz, files)
     client = get_client()
 
     # --- Plea draft chips: append a draft to the composer, do not re-view. ---
@@ -821,16 +846,22 @@ def do_action_by_id(wiz, aid, mm=""):
                     "The court needs at least one dramatic detail before swinging the hammer.")}
             _ensure_session(wiz)
         _build_docket_if_needed(wiz, client)
-        if text and wiz.focus in ("witness", "evidence"):
+        if (text or (wiz.focus == "evidence" and file_records)) and wiz.focus in ("witness", "evidence"):
             # A pending composer line is one last beat in the active scene: a
             # cross-examination question (witness) or one more exhibit (evidence).
             scene = _scene_now(wiz)
-            wiz.events.append({"who": _role_label(wiz), "text": text, "scene": scene})
+            pending_text = _evidence_text(text, file_records) if wiz.focus == "evidence" else text
+            wiz.events.append({"who": _role_label(wiz), "text": pending_text, "scene": scene})
             since = len(wiz.trial.transcript)
             if wiz.focus == "witness":
                 cross_examine(wiz.trial, client, text)
             else:
-                submit_evidence(wiz.trial, client, text)
+                submit_evidence(
+                    wiz.trial,
+                    client,
+                    pending_text,
+                    image_paths=_image_paths(file_records),
+                )
             _drain(wiz, scene, since)
         _close_with_deltas(wiz, client)
         return render(wiz)
@@ -1206,6 +1237,7 @@ def warm_backend() -> None:
         threading.Thread(target=get_client, daemon=True).start()
     elif BACKEND == "remote":
         print("[tinycourt] remote endpoint: Modal MiniCPM OpenAI-compatible API")
+        get_client()
 
 
 def launch_kwargs() -> dict:

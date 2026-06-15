@@ -31,7 +31,7 @@ import warnings
 import spaces
 
 from .config import ModelSpec, selected_model
-from .generation import CallTag, GenerationClient, GenerationResult, Message
+from .generation import CallTag, GenerationClient, GenerationResult, Message, content_text
 
 # bitsandbytes 0.49 emits a torch `_check_is_size` FutureWarning on every 4-bit
 # matmul — one per generated token. Pure third-party noise; silence at the seam.
@@ -150,7 +150,7 @@ class LocalTransformersClient(GenerationClient):
         max_new_tokens: int = 320,
         temperature: float = 0.9,
     ) -> GenerationResult:
-        chat = [{"role": m.role, "content": m.content} for m in messages]
+        chat = [{"role": m.role, "content": content_text(m.content)} for m in messages]
         raw = self._encode(chat)
         # Cross the GPU boundary with a plain dict of CPU tensors only. Most chat
         # templates emit attention_mask; tolerate one that doesn't rather than

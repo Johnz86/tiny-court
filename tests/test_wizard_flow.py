@@ -332,6 +332,20 @@ def test_stash_and_clear_round_trip():
     assert cleared == {"text": "", "files": []}
 
 
+def test_image_only_evidence_submit_creates_exhibit(tmp_path):
+    image = tmp_path / "mug.png"
+    image.write_bytes(b"fake-png")
+    wiz = _fresh_wiz()
+    wiz, _ = _send(wiz, "My roommate used the last clean mug.")
+    wiz, _ = _act(wiz, "submit_evidence")
+
+    out = do_send(wiz, {"text": "", "files": [str(image)]})
+    wiz = out[C["st"]]
+
+    assert wiz.trial.exhibits
+    assert any(a["label"] == "mug.png" and a["kind"] == "image" for a in wiz.attachments)
+
+
 def test_verdict_label_must_agree_with_band():
     from tinycourt.engine import _safe_verdict_label
     from tinycourt.trial import GUILTY, NOT_GUILTY

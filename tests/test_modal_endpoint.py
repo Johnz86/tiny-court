@@ -1,12 +1,13 @@
 """Opt-in live checks for the Modal MiniCPM OpenAI-compatible endpoint.
 
-Run the current public-baseline check before proxy auth is deployed:
+Run the protected-endpoint smoke check with:
 
     uv run --env-file .env pytest -m modal_live tests/test_modal_endpoint.py
 
-After deploying proxy auth, set TINYCOURT_EXPECT_MODAL_PROXY_AUTH=1 in .env and
-run the same command. Normal pytest runs deselect this file because the
-`modal_live` marker is excluded by default in pyproject.toml.
+The tests expect Modal proxy auth by default because the endpoint is deployed
+with `requires_proxy_auth=True`. For a pre-auth public-baseline check, set
+`TINYCOURT_EXPECT_MODAL_PROXY_AUTH=0` in `.env`. Normal pytest runs deselect this
+file because the `modal_live` marker is excluded by default in pyproject.toml.
 """
 
 from __future__ import annotations
@@ -33,7 +34,8 @@ def _enabled() -> bool:
 
 
 def _expect_proxy_auth() -> bool:
-    return os.environ.get("TINYCOURT_EXPECT_MODAL_PROXY_AUTH") == "1"
+    value = os.environ.get("TINYCOURT_EXPECT_MODAL_PROXY_AUTH", "1").lower()
+    return value in {"1", "true", "yes", "y"}
 
 
 def _payload() -> dict[str, Any]:
@@ -52,6 +54,49 @@ def _payload() -> dict[str, Any]:
                     "Write a Tiny Court charge for a roommate who used the last "
                     "clean mug. Include a --- delimiter and CHARGE: field."
                 ),
+            },
+        ],
+    }
+
+
+def _image_payload() -> dict[str, Any]:
+    # 1x1 transparent PNG. Small enough for a fast live endpoint contract test.
+    tiny_png = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8"
+        "/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+    )
+    return {
+        "model": os.environ.get("TINYCOURT_MODAL_MODEL", "MiniCPM-V-4.6"),
+        "temperature": 0.2,
+        "max_tokens": 128,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "Return only a Tiny Court delimited response. Do not use markdown. "
+                    "Do not show reasoning."
+                ),
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{tiny_png}"},
+                    },
+                    {
+                        "type": "text",
+                        "text": (
+                            "Inspect this uploaded image as evidence in Tiny Court. "
+                            "Return exactly this field format:\n"
+                            "---\n"
+                            "EXHIBIT: <dramatic exhibit name>\n"
+                            "DESCRIPTION: <one sentence>\n"
+                            "RELEVANCE: <short relevance>\n"
+                            "RULING: <admitted or rejected>"
+                        ),
+                    },
+                ],
             },
         ],
     }
@@ -105,3 +150,17 @@ def test_modal_endpoint_accepts_proxy_auth_when_credentials_are_configured(
     data = response.json()
     content = data["choices"][0]["message"].get("content", "")
     assert "CHARGE:" in content
+
+
+def test_modal_endpoint_accepts_image_evidence_content(chat_url: str) -> None:
+    response = requests.post(
+        chat_url,
+        json=_image_payload(),
+        headers=_auth_headers(),
+        timeout=float(os.environ.get("TINYCOURT_MODAL_TIMEOUT", "300")),
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    content = data["choices"][0]["message"].get("content", "")
+    assert "EXHIBIT:" in content

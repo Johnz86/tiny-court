@@ -10,6 +10,8 @@ via ``launch()`` (Gradio 6 ignores them on the Blocks constructor).
 Backend selection (docs/adr/0002) is via env var:
     TINYCOURT_BACKEND=fake   (default) canned text, no GPU — great for the UI demo
     TINYCOURT_BACKEND=local  load a downloaded model (Qwen3 via @spaces.GPU)
+    TINYCOURT_BACKEND=remote use Modal llama.cpp; auto-selected when
+                             TINYCOURT_MODAL_CHAT_URL is set
 """
 
 from tinycourt.app import build_demo, launch_kwargs, warm_backend

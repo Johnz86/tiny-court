@@ -13,6 +13,7 @@ import enum
 import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Any
 
 
 class CallTag(enum.Enum):
@@ -36,7 +37,22 @@ class CallTag(enum.Enum):
 @dataclass
 class Message:
     role: str  # "system" | "user" | "assistant"
-    content: str
+    content: str | list[dict[str, Any]]
+
+
+def content_text(content: str | list[dict[str, Any]]) -> str:
+    """Return a text-only approximation of OpenAI-style message content."""
+    if isinstance(content, str):
+        return content
+    chunks: list[str] = []
+    for part in content:
+        if part.get("type") == "text":
+            chunks.append(str(part.get("text") or ""))
+        elif part.get("type") == "image_url":
+            chunks.append("[uploaded image]")
+        else:
+            chunks.append(f"[{part.get('type') or 'uploaded content'}]")
+    return "\n".join(chunk for chunk in chunks if chunk)
 
 
 @dataclass

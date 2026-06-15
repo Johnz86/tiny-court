@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import time
 from typing import Any
@@ -39,6 +41,61 @@ class RemoteModalClient(GenerationClient):
             "Modal-Secret": self.modal_secret,
         }
 
+    def _payload(
+        self,
+        messages: list[Message],
+        *,
+        max_new_tokens: int,
+        temperature: float,
+    ) -> dict[str, Any]:
+        return {
+            "model": self.model,
+            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "temperature": temperature,
+            "max_tokens": max_new_tokens,
+            "chat_template_kwargs": {"enable_thinking": False},
+        }
+
+    def _debug_enabled(self) -> bool:
+        return os.environ.get("TINYCOURT_REMOTE_DEBUG", "").lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+        }
+
+    def _log_payload(self, payload: dict[str, Any]) -> None:
+        if not self._debug_enabled():
+            return
+        safe_payload = redact_payload_for_log(payload)
+        print("[tinycourt] remote request payload:")
+        print(json.dumps(safe_payload, indent=2, sort_keys=True))
+
+    def health_check(self) -> bool:
+        """True when the configured remote endpoint can answer a tiny chat call."""
+        timeout = float(
+            os.environ.get(
+                "TINYCOURT_REMOTE_HEALTH_TIMEOUT",
+                str(min(self.timeout, 60.0)),
+            )
+        )
+        messages = [
+            Message("system", "Reply with exactly: OK"),
+            Message("user", "OK?"),
+        ]
+        try:
+            response = requests.post(
+                self.chat_url,
+                json=self._payload(messages, max_new_tokens=8, temperature=0.0),
+                headers=self._headers(),
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return bool(data.get("choices"))
+        except Exception:
+            return False
+
     def generate(
         self,
         messages: list[Message],
@@ -47,15 +104,13 @@ class RemoteModalClient(GenerationClient):
         max_new_tokens: int = 320,
         temperature: float = 0.9,
     ) -> GenerationResult:
-        payload: dict[str, Any] = {
-            "model": self.model,
-            "messages": [{"role": m.role, "content": m.content} for m in messages],
-            "temperature": temperature,
-            "max_tokens": max_new_tokens,
-            "chat_template_kwargs": {"enable_thinking": False},
-        }
-
         start = time.perf_counter()
+        payload = self._payload(
+            messages,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+        )
+        self._log_payload(payload)
         response = requests.post(
             self.chat_url,
             json=payload,
@@ -63,6 +118,11 @@ class RemoteModalClient(GenerationClient):
             timeout=self.timeout,
         )
         seconds = time.perf_counter() - start
+        if self._debug_enabled():
+            print(
+                f"[tinycourt] remote response status={response.status_code} "
+                f"seconds={seconds:.2f}"
+            )
         response.raise_for_status()
         data = response.json()
 
@@ -79,3 +139,38 @@ class RemoteModalClient(GenerationClient):
                 "status_code": response.status_code,
             },
         )
+
+
+def redact_payload_for_log(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a JSON-safe payload copy with inline image data removed."""
+    try:
+        clean = json.loads(json.dumps(payload))
+    except Exception:
+        return {"unserialisable_payload_type": type(payload).__name__}
+    return _redact_images(clean)
+
+
+def _redact_images(value: Any) -> Any:
+    if isinstance(value, dict):
+        image_url = value.get("image_url")
+        if isinstance(image_url, dict):
+            url = image_url.get("url")
+            if isinstance(url, str) and url.startswith("data:image/"):
+                image_url["url"] = _redacted_data_url(url)
+                image_url["redacted_sha256"] = hashlib.sha256(
+                    url.encode("utf-8")
+                ).hexdigest()
+                image_url["redacted_length"] = len(url)
+        for nested in value.values():
+            _redact_images(nested)
+    elif isinstance(value, list):
+        for item in value:
+            _redact_images(item)
+    return value
+
+
+def _redacted_data_url(url: str) -> str:
+    prefix = url.split(",", 1)[0]
+    if not prefix.startswith("data:image/"):
+        prefix = "data:image/*;base64"
+    return f"{prefix},[REDACTED]"

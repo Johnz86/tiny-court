@@ -9,8 +9,13 @@ fallback card (docs/adr/0003). The verdict band is always computed in Python
 
 from __future__ import annotations
 
+import base64
+import io
+import mimetypes
+import os
 import random
 from collections.abc import Sequence
+from pathlib import Path
 
 from . import data, prompts
 from .config import BACKEND
@@ -32,14 +37,27 @@ def make_client() -> GenerationClient:
     """Construct the configured backend (docs/adr/0002). ``local`` is imported
     lazily so torch/transformers are never required for the fake path or tests."""
     if BACKEND == "local":
-        from .local_client import LocalTransformersClient
-
-        return LocalTransformersClient()
+        return _local_client_or_fake()
     if BACKEND == "remote":
         from .remote_client import RemoteModalClient
 
-        return RemoteModalClient()
+        remote = RemoteModalClient()
+        if remote.health_check():
+            print("[tinycourt] remote backend healthy: using Modal llama.cpp")
+            return remote
+        print("[tinycourt] remote backend unavailable: falling back to local ZeroGPU backend")
+        return _local_client_or_fake()
     return FakeClient()
+
+
+def _local_client_or_fake() -> GenerationClient:
+    try:
+        from .local_client import LocalTransformersClient
+
+        return LocalTransformersClient()
+    except Exception as exc:
+        print(f"[tinycourt] local backend unavailable: falling back to fake ({exc})")
+        return FakeClient()
 
 
 def robust_call(
@@ -213,10 +231,16 @@ def play_arguments(state: TrialState, client: GenerationClient) -> TrialState:
     return state
 
 
-def submit_evidence(state: TrialState, client: GenerationClient, raw_evidence: str) -> TrialState:
+def submit_evidence(
+    state: TrialState,
+    client: GenerationClient,
+    raw_evidence: str,
+    *,
+    image_paths: Sequence[str] = (),
+) -> TrialState:
     parsed = robust_call(
         client,
-        prompts.evidence(state_summary(state), raw_evidence),
+        _with_image_content(prompts.evidence(state_summary(state), raw_evidence), image_paths),
         CallTag.EVIDENCE,
         required_keys=("EXHIBIT",),
         state=state,
@@ -251,6 +275,74 @@ def submit_evidence(state: TrialState, client: GenerationClient, raw_evidence: s
     )
     state.interaction_done = True
     return state
+
+
+def _with_image_content(messages: list[Message], image_paths: Sequence[str]) -> list[Message]:
+    image_parts = []
+    for path in image_paths:
+        data_url = _image_data_url(path)
+        if data_url:
+            image_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+    if not image_parts:
+        return messages
+
+    updated = list(messages)
+    for idx in range(len(updated) - 1, -1, -1):
+        message = updated[idx]
+        if message.role != "user":
+            continue
+        content = message.content
+        text_part = {"type": "text", "text": content if isinstance(content, str) else ""}
+        if isinstance(content, list):
+            new_content = image_parts + content
+        else:
+            new_content = [*image_parts, text_part]
+        updated[idx] = Message(message.role, new_content)
+        return updated
+    return messages
+
+
+def _image_data_url(path: str) -> str:
+    candidate = Path(path)
+    if not candidate.is_file():
+        return ""
+    mime, _ = mimetypes.guess_type(candidate.name)
+    if not mime or not mime.startswith("image/"):
+        return ""
+    compressed = _compressed_image_data_url(candidate)
+    if compressed:
+        return compressed
+    payload = base64.b64encode(candidate.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{payload}"
+
+
+def _compressed_image_data_url(path: Path) -> str:
+    """Resize image evidence before sending it to the remote vision model."""
+    try:
+        from PIL import Image
+    except Exception:
+        return ""
+
+    try:
+        max_size = int(os.environ.get("TINYCOURT_IMAGE_MAX_SIZE", "1024"))
+        quality = int(os.environ.get("TINYCOURT_IMAGE_JPEG_QUALITY", "85"))
+    except ValueError:
+        max_size = 1024
+        quality = 85
+    max_size = max(1, max_size)
+    quality = min(95, max(1, quality))
+
+    try:
+        with Image.open(path) as image:
+            image = image.convert("RGB")
+            image.thumbnail((max_size, max_size))
+            buffer = io.BytesIO()
+            image.save(buffer, format="JPEG", quality=quality, optimize=True)
+    except Exception:
+        return ""
+
+    payload = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/jpeg;base64,{payload}"
 
 
 def call_witness(state: TrialState, client: GenerationClient) -> TrialState:
