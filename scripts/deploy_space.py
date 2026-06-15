@@ -44,6 +44,8 @@ ALLOW_PATTERNS = [
     "tinycourt/*.py",
     "tinycourt/static/**",
     "wheels/*.whl",
+    "assets/promo-walkthrough.webp",  # inline demo on the Space card
+    "assets/promo-walkthrough.mp4",   # full-quality download link
 ]
 IGNORE_PATTERNS = ["**/__pycache__/**", "**/*.pyc", "**/*.map"]
 
