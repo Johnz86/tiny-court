@@ -21,7 +21,10 @@ const { chromium } = require(PW);
 const path = require("path");
 const fs = require("fs");
 
-const BASE = "http://127.0.0.1:7861/?__theme=light";
+// Target: local app by default, or any URL via TC_BASE (e.g. the live Space:
+//   TC_BASE="https://build-small-hackathon-tiny-court.hf.space/?__theme=light")
+const BASE = process.env.TC_BASE || "http://127.0.0.1:7861/?__theme=light";
+const WAIT = Number(process.env.TC_WAIT || 60000);  // per-step model-call timeout
 const OUT = path.resolve("tests/screenshots/promo");
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -50,20 +53,20 @@ async function shoot(page, name) {
 // Click an in-shell reply chip by its data-tc-action id, then wait for the turn.
 async function chip(page, id, waitFor) {
   const sel = `#surface .reply-chip[data-tc-action="${id}"]`;
-  await page.waitForSelector(sel, { timeout: 12000 });
+  await page.waitForSelector(sel, { timeout: WAIT });
   await page.waitForTimeout(BEAT);
   await page.click(sel);
-  if (waitFor) await page.waitForSelector(waitFor, { timeout: 15000 });
+  if (waitFor) await page.waitForSelector(waitFor, { timeout: WAIT });
   await page.waitForTimeout(SETTLE);
 }
 
 // Click a paper-phase action button (#actionRow gr.Button) by its visible label.
 async function paperBtn(page, label, waitFor) {
   const btn = page.locator("#actionRow button", { hasText: label }).first();
-  await btn.waitFor({ state: "visible", timeout: 12000 });
+  await btn.waitFor({ state: "visible", timeout: WAIT });
   await page.waitForTimeout(BEAT);
   await btn.click();
-  if (waitFor) await page.waitForSelector(waitFor, { timeout: 15000 });
+  if (waitFor) await page.waitForSelector(waitFor, { timeout: WAIT });
   await page.waitForTimeout(SETTLE);
 }
 
@@ -90,13 +93,13 @@ async function compose(page, text, { send = true } = {}) {
   const page = await ctx.newPage();
 
   // ── Landing: let the rotating hero docket breathe before we begin ──────────
-  await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: WAIT });
   await page.waitForTimeout(1800);
   await shoot(page, "landing");
 
   // Take the Full Trial path (the power-user arc with every move available).
   await page.click("#beginFullBtn");
-  await page.waitForSelector(".message-shell", { timeout: 8000 });
+  await page.waitForSelector(".message-shell", { timeout: WAIT });
   await page.waitForTimeout(SETTLE);
 
   // ── Case: file the complaint ───────────────────────────────────────────────
