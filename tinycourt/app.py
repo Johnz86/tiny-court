@@ -1130,15 +1130,19 @@ def build_demo() -> gr.Blocks:
                 gr.HTML('<p class="landing-note"><strong>Quick Trial</strong> runs in about a minute. '
                         '<strong>Full Trial</strong> calls witnesses, allows a twist, and opens the Case File. '
                         'Evidence optional. Grudges welcome.</p>')
+                # A <div>, not <footer>: Gradio's theme hides <footer> tags.
                 gr.HTML(
-                    '<footer class="landing-footer">'
-                    '<span class="lf-seal">⚖</span> Judged by small open models on '
-                    '<a href="https://modal.com" target="_blank" rel="noopener noreferrer">Modal</a> via '
+                    '<div class="landing-footer">'
+                    '<span class="lf-seal">⚖</span> Small open models from '
+                    '<a href="https://huggingface.co/nvidia" target="_blank" rel="noopener noreferrer">NVIDIA</a>, '
+                    '<a href="https://huggingface.co/openbmb" target="_blank" rel="noopener noreferrer">OpenBMB</a> &amp; '
+                    '<a href="https://huggingface.co/JetBrains" target="_blank" rel="noopener noreferrer">JetBrains</a><br>'
+                    'served on <a href="https://modal.com" target="_blank" rel="noopener noreferrer">Modal</a> via '
                     '<a href="https://github.com/ggml-org/llama.cpp" target="_blank" rel="noopener noreferrer">llama.cpp</a>'
                     ' &amp; <a href="https://github.com/NVIDIA/NeMo" target="_blank" rel="noopener noreferrer">NeMo</a>'
                     '<span class="lf-dot">·</span>'
                     '<a href="https://github.com/Johnz86/tiny-court" target="_blank" rel="noopener noreferrer">Source on GitHub</a>'
-                    '</footer>'
+                    '</div>'
                 )
 
         # --- Join ---
