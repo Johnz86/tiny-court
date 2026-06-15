@@ -1130,6 +1130,16 @@ def build_demo() -> gr.Blocks:
                 gr.HTML('<p class="landing-note"><strong>Quick Trial</strong> runs in about a minute. '
                         '<strong>Full Trial</strong> calls witnesses, allows a twist, and opens the Case File. '
                         'Evidence optional. Grudges welcome.</p>')
+                gr.HTML(
+                    '<footer class="landing-footer">'
+                    '<span class="lf-seal">⚖</span> Judged by small open models on '
+                    '<a href="https://modal.com" target="_blank" rel="noopener noreferrer">Modal</a> via '
+                    '<a href="https://github.com/ggml-org/llama.cpp" target="_blank" rel="noopener noreferrer">llama.cpp</a>'
+                    ' &amp; <a href="https://github.com/NVIDIA/NeMo" target="_blank" rel="noopener noreferrer">NeMo</a>'
+                    '<span class="lf-dot">·</span>'
+                    '<a href="https://github.com/Johnz86/tiny-court" target="_blank" rel="noopener noreferrer">Source on GitHub</a>'
+                    '</footer>'
+                )
 
         # --- Join ---
         with gr.Column(visible=False, elem_id="joinView", elem_classes="court-view") as join_col:
