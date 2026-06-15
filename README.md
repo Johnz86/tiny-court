@@ -19,14 +19,13 @@ tags:
   - comedy
   - agent
   - track:backyard
-  - achievement:offbrand
-  - achievement:sharing
-  - achievement:llama
-  - achievement:fieldnotes
   - sponsor:modal
   - sponsor:nvidia
   - sponsor:openbmb
   - sponsor:jetbrains
+  - badge:off-brand
+  - badge:best-agent
+  - badge:bonus-quest-champion
 ---
 
 <!-- The block above is Hugging Face Space metadata (must stay at the very top).
