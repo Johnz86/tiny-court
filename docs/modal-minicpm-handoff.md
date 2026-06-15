@@ -16,8 +16,13 @@ finish the Hugging Face Space integration.
   (`@modal.asgi_app(requires_proxy_auth=True)`), using `Modal-Key` and
   `Modal-Secret` headers from `TINYCOURT_MODAL_KEY` /
   `TINYCOURT_MODAL_SECRET`.
-- Endpoint smoke test passed with HTTP 200 and returned a `CHARGE:` field.
+- Endpoint smoke tests pass against the protected deployed endpoint:
+  unauthenticated requests are rejected, authenticated text requests return a
+  `CHARGE:` field, and authenticated image evidence requests return an
+  `EXHIBIT:` field.
 - The Hugging Face Space has **not** yet been switched to this backend.
+- The full remaining rollout plan is in
+  [modal-remote-integration-plan.md](modal-remote-integration-plan.md).
 
 ## Modal implementation
 
@@ -29,6 +34,17 @@ Code lives in `modal_minicpm/`.
   selected with `-m modal_live`.
 - `modal_minicpm/README.md` records verified model links, runtime tuple, and deploy
   commands.
+- With `TINYCOURT_BACKEND=remote`, client construction runs a small remote health
+  check. A healthy endpoint uses Modal llama.cpp; an unhealthy endpoint falls
+  back to the local ZeroGPU client, then to `FakeClient` only if local model
+  construction is unavailable.
+- Uploaded image evidence is sent as OpenAI-compatible `image_url` content.
+  Valid images are resized/compressed locally before upload
+  (`TINYCOURT_IMAGE_MAX_SIZE`, default `1024`;
+  `TINYCOURT_IMAGE_JPEG_QUALITY`, default `85`).
+- `TINYCOURT_REMOTE_DEBUG=1` prints redacted request payloads and response timing
+  for local smoke tests. Base64 image data is replaced with `[REDACTED]`, with
+  only hash and length metadata retained.
 
 Runtime tuple:
 
@@ -89,18 +105,22 @@ uv run modal app list --json
 ```
 
 Expected endpoint smoke-test result: missing proxy auth is rejected, valid proxy
-auth returns HTTP 200, and the response contains `CHARGE:`.
+auth returns HTTP 200, text smoke contains `CHARGE:`, and image evidence smoke
+contains `EXHIBIT:`.
 
 ## Next steps
 
-1. Apply the Space variables above.
-2. Rebuild/restart the Hugging Face Space.
-3. Run a real Tiny Court trial against the deployed Space.
-4. Watch for parser fallbacks in generated trial steps. The endpoint smoke test
-   confirms the endpoint shape, but the full app still needs model outputs to
-   obey Tiny Court's delimited fields consistently.
-5. If stable, update the main README tags/claims for Modal, OpenBMB, and Llama
-   Champion only after the Space is demonstrably using the remote backend.
+Use [modal-remote-integration-plan.md](modal-remote-integration-plan.md) as the
+canonical checklist. The short version:
+
+1. Commit only the Modal remote integration changes.
+2. Push to the synchronized GitHub remote.
+3. Set the Space variables/secrets.
+4. Rebuild/restart the Space.
+5. Confirm Space logs show `backend: remote` and `remote backend healthy`.
+6. Run one real Tiny Court trial through the Space, including uploaded image
+   evidence.
+7. Update public README claims/tags only after the Space demonstrably uses Modal.
 
 ## Suggested skills
 
