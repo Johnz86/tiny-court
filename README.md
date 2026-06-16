@@ -55,6 +55,7 @@ Built for the **Build Small Hackathon** (Gradio × Hugging Face).
 * **Video demo:** [a narrated walkthrough of a full case](https://youtu.be/b5l3SRioTkE)
 * **Open traces:** https://huggingface.co/datasets/build-small-hackathon/tiny-court-traces
 * **Field notes / blog post:** https://johnz86.github.io/blog/tiny-court-and-the-urge-to-outsource-judgment.html
+* **Social post:** https://www.facebook.com/share/p/14hNEDScttq/
 * **Narrated overview (video):** [Tiny Court and the urge to outsource judgment](https://youtu.be/sRP8FBWoPXg)
 
 ## Watch a trial
