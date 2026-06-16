@@ -51,7 +51,7 @@ class RemoteModalClient(GenerationClient):
         # delimited block within a small token budget (verified: 0/6 clean at
         # 0.9/160 vs 6/6 at 0.6/400). Cap temperature and floor the token budget
         # on the judge call so it emits clean KEY: value output.
-        self.temp_cap = float(os.environ.get("TINYCOURT_REMOTE_TEMP_CAP", "0.6"))
+        self.temp_cap = float(os.environ.get("TINYCOURT_REMOTE_TEMP_CAP", "0.5"))
         self.min_tokens = int(os.environ.get("TINYCOURT_REMOTE_MIN_TOKENS", "400"))
 
     def _headers(self) -> dict[str, str] | None:
