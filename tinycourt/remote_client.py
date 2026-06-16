@@ -46,6 +46,13 @@ class RemoteModalClient(GenerationClient):
         self.timeout = float(os.environ.get("TINYCOURT_MODAL_TIMEOUT", "300"))
         self.modal_key = os.environ.get("TINYCOURT_MODAL_KEY")
         self.modal_secret = os.environ.get("TINYCOURT_MODAL_SECRET")
+        # Reasoning-model guardrails for the judge: Nemotron-class GGUFs ramble
+        # into open chain-of-thought at high temperature and never reach the
+        # delimited block within a small token budget (verified: 0/6 clean at
+        # 0.9/160 vs 6/6 at 0.6/400). Cap temperature and floor the token budget
+        # on the judge call so it emits clean KEY: value output.
+        self.temp_cap = float(os.environ.get("TINYCOURT_REMOTE_TEMP_CAP", "0.6"))
+        self.min_tokens = int(os.environ.get("TINYCOURT_REMOTE_MIN_TOKENS", "400"))
 
     def _headers(self) -> dict[str, str] | None:
         if not self.modal_key and not self.modal_secret:
@@ -179,8 +186,8 @@ class RemoteModalClient(GenerationClient):
             messages,
             url=self.chat_url,
             model=self.model,
-            max_new_tokens=max_new_tokens,
-            temperature=temperature,
+            max_new_tokens=max(max_new_tokens, self.min_tokens),
+            temperature=min(temperature, self.temp_cap),
         )
         seconds = time.perf_counter() - start
 
